@@ -1,0 +1,14 @@
+services:
+
+    db:
+      image: mysql:8.0.25
+      environment:
+        MYSQL_ROOT_PASSWORD: pass
+        MYSQL_DATABASE: demo
+      ports:
+        - 3306:3306
+  
+    # application:
+    #   build: .
+    #   ports:
+    #     - 8443:8443
