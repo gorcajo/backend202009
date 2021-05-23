@@ -1,10 +1,10 @@
-package com.example.demo.task;
+package com.example.demo.entity;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
 
 @Entity
-public class TaskEntity {
+public class Task {
 
     @Id
     private int id;
