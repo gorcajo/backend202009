@@ -79,14 +79,13 @@ public class TaskServiceTest {
 
         // assert
 
-        assertThat(task.isPresent(), is(Boolean.TRUE));
-        assertThat(task.get().getId(), is(5));
-        assertThat(task.get().getDescription(), is("description"));
-        assertThat(task.get().isCompleted(), is(Boolean.FALSE));
-        assertThat(task.get().getPriority(), is(TaskPriority.LOW));
+        assertThat(task.getId(), is(5));
+        assertThat(task.getDescription(), is("description"));
+        assertThat(task.isCompleted(), is(Boolean.FALSE));
+        assertThat(task.getPriority(), is(TaskPriority.LOW));
     }
 
-    @Test
+    @Test(expected = NotFoundException.class)
     public void get_inexistent_task() {
         // arrange
 
@@ -97,8 +96,6 @@ public class TaskServiceTest {
         var task = service.getTask(8);
 
         // assert
-
-        assertThat(task.isPresent(), is(Boolean.FALSE));
     }
 
     @Test

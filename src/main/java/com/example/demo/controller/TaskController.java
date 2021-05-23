@@ -28,13 +28,11 @@ public class TaskController {
 
     @GetMapping("/tasks/{id}")
     public ResponseEntity<TaskDto> listTasks(@PathVariable("id") int id) {
-        var task = taskService.getTask(id);
-
-        if (task.isEmpty()) {
+        try {
+            return ResponseEntity.ok(TaskAssembler.convert(taskService.getTask(id)));
+        } catch (NotFoundException nfe) {
             return ResponseEntity.notFound().build();
         }
-
-        return ResponseEntity.ok(TaskAssembler.convert(task.get()));
     }
 
     @PostMapping("/tasks")
@@ -54,7 +52,11 @@ public class TaskController {
 
     @DeleteMapping("/tasks/{id}")
     public ResponseEntity<Void> deleteTask(@PathVariable("id") int id) {
-        taskService.deleteTask(id);
-        return ResponseEntity.noContent().build();
+        try {
+            taskService.deleteTask(id);
+            return ResponseEntity.noContent().build();
+        } catch (NotFoundException nfe) {
+            return ResponseEntity.notFound().build();
+        }
     }
 }
