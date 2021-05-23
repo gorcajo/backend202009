@@ -14,7 +14,7 @@ import java.util.List;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class TaskServiceTest {
@@ -80,5 +80,19 @@ public class TaskServiceTest {
         assertThat(createdTask.getDescription(), is("task0"));
         assertThat(createdTask.isCompleted(), is(Boolean.FALSE));
         assertThat(createdTask.getPriority(), is(TaskPriority.LOW));
+    }
+
+
+    @Test
+    public void delete_task() {
+        // arrange
+
+        // act
+
+        service.deleteTask(3);
+
+        // assert
+
+        verify(fakeRepo, times(1)).deleteById(eq(3));
     }
 }
