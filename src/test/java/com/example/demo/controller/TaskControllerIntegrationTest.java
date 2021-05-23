@@ -84,6 +84,32 @@ class TaskControllerIntegrationTest {
                 .statusCode(HTTP_NOT_FOUND);
     }
 
+    @Test
+    void modify_task() {
+        given()
+                .baseUri("http://localhost:" + port)
+                .contentType(ContentType.JSON)
+                .body(new TaskDto("new-description", true, TaskPriority.MEDIUM))
+                .when()
+                .put("/v1/tasks/" + initialTasks.get(0).getId())
+                .then()
+                .assertThat()
+                .statusCode(HTTP_NO_CONTENT);
+    }
+
+    @Test
+    void modify_inexistent_task() {
+        given()
+                .baseUri("http://localhost:" + port)
+                .contentType(ContentType.JSON)
+                .body(new TaskDto("new-description", true, TaskPriority.MEDIUM))
+                .when()
+                .put("/v1/tasks/-1")
+                .then()
+                .assertThat()
+                .statusCode(HTTP_NOT_FOUND);
+    }
+
     @AfterEach
     public void cleanup() {
         for (TaskDto task : initialTasks) {

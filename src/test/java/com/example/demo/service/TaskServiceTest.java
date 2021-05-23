@@ -2,10 +2,13 @@ package com.example.demo.service;
 
 import com.example.demo.entity.Task;
 import com.example.demo.entity.TaskPriority;
+import com.example.demo.exception.NotFoundException;
 import com.example.demo.repository.TaskRepository;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -22,6 +25,9 @@ public class TaskServiceTest {
     @Mock
     private TaskRepository fakeRepo;
 
+    @Captor
+    ArgumentCaptor<Task> taskCaptor;
+
     private TaskService service;
 
     @Before
@@ -34,9 +40,9 @@ public class TaskServiceTest {
         // arrange
 
         when(fakeRepo.findAll()).thenReturn(List.of(
-                new Task(0, "task0", true, TaskPriority.HIGH),
-                new Task(1, "task1", false, TaskPriority.LOW),
-                new Task(2, "task2", false, TaskPriority.LOW)
+                new Task(0, "description-0", true, TaskPriority.HIGH),
+                new Task(1, "description-1", false, TaskPriority.LOW),
+                new Task(2, "description-2", false, TaskPriority.LOW)
         ));
 
         // act
@@ -47,11 +53,11 @@ public class TaskServiceTest {
 
         assertThat(tasks.size(), is(3));
         assertThat(tasks.get(0).getId(), is(0));
-        assertThat(tasks.get(0).getDescription(), is("task0"));
+        assertThat(tasks.get(0).getDescription(), is("description-0"));
         assertThat(tasks.get(0).isCompleted(), is(Boolean.TRUE));
         assertThat(tasks.get(0).getPriority(), is(TaskPriority.HIGH));
         assertThat(tasks.get(2).getId(), is(2));
-        assertThat(tasks.get(2).getDescription(), is("task2"));
+        assertThat(tasks.get(2).getDescription(), is("description-2"));
         assertThat(tasks.get(2).isCompleted(), is(Boolean.FALSE));
         assertThat(tasks.get(2).getPriority(), is(TaskPriority.LOW));
     }
@@ -63,7 +69,7 @@ public class TaskServiceTest {
         when(fakeRepo.findById(5))
                 .thenReturn(Optional.of(new Task(
                         5,
-                        "task",
+                        "description",
                         false,
                         TaskPriority.LOW)));
 
@@ -75,7 +81,7 @@ public class TaskServiceTest {
 
         assertThat(task.isPresent(), is(Boolean.TRUE));
         assertThat(task.get().getId(), is(5));
-        assertThat(task.get().getDescription(), is("task"));
+        assertThat(task.get().getDescription(), is("description"));
         assertThat(task.get().isCompleted(), is(Boolean.FALSE));
         assertThat(task.get().getPriority(), is(TaskPriority.LOW));
     }
@@ -99,7 +105,7 @@ public class TaskServiceTest {
     public void create_task() {
         // arrange
 
-        var taskToBeCreated = new Task("task0", false, TaskPriority.LOW);
+        var taskToBeCreated = new Task("description-0", false, TaskPriority.LOW);
 
         when(fakeRepo.save(taskToBeCreated))
                 .thenReturn(new Task(
@@ -115,9 +121,44 @@ public class TaskServiceTest {
         // assert
 
         assertThat(createdTask.getId(), is(3));
-        assertThat(createdTask.getDescription(), is("task0"));
+        assertThat(createdTask.getDescription(), is("description-0"));
         assertThat(createdTask.isCompleted(), is(Boolean.FALSE));
         assertThat(createdTask.getPriority(), is(TaskPriority.LOW));
+    }
+
+    @Test
+    public void modify_task() {
+        // arrange
+
+        when(fakeRepo.findById(4))
+                .thenReturn(Optional.of(new Task(
+                        4,
+                        "original-description",
+                        true,
+                        TaskPriority.MEDIUM)));
+
+        // act
+
+        service.modifyTask(4, new Task("new-description", true, TaskPriority.MEDIUM));
+
+        // assert
+
+        verify(fakeRepo, times(1)).findById(4);
+        verify(fakeRepo, times(1)).save(taskCaptor.capture());
+        assertThat(taskCaptor.getValue().getDescription(), is("new-description"));
+        assertThat(taskCaptor.getValue().isCompleted(), is(Boolean.TRUE));
+        assertThat(taskCaptor.getValue().getPriority(), is(TaskPriority.MEDIUM));
+    }
+
+    @Test(expected = NotFoundException.class)
+    public void modify_inexistent_task() {
+        // arrange
+
+        // act
+
+        service.modifyTask(4, new Task("new-description", true, TaskPriority.MEDIUM));
+
+        // assert
     }
 
     @Test

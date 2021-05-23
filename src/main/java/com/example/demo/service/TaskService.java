@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.entity.Task;
+import com.example.demo.exception.NotFoundException;
 import com.example.demo.repository.TaskRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,12 @@ public class TaskService {
 
     public Task createTask(Task taskToBeCreated) {
         return taskRepository.save(taskToBeCreated);
+    }
+
+    public void modifyTask(int id, Task task) {
+        var storedTask = taskRepository.findById(id).orElseThrow(NotFoundException::new);
+        task.setId(storedTask.getId());
+        taskRepository.save(task);
     }
 
     public void deleteTask(int id) {

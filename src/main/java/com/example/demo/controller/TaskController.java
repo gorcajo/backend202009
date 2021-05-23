@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import com.example.demo.exception.NotFoundException;
 import com.example.demo.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -39,6 +40,16 @@ public class TaskController {
     @PostMapping("/tasks")
     public ResponseEntity<TaskDto> createTask(@RequestBody TaskDto task) {
         return ResponseEntity.ok(TaskAssembler.convert(taskService.createTask(TaskAssembler.convert(task))));
+    }
+
+    @PutMapping("/tasks/{id}")
+    public ResponseEntity<Void> modifyTask(@PathVariable("id") int id, @RequestBody TaskDto task) {
+        try {
+            taskService.modifyTask(id, TaskAssembler.convert(task));
+            return ResponseEntity.noContent().build();
+        } catch (NotFoundException nfe) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @DeleteMapping("/tasks/{id}")
