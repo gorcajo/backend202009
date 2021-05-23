@@ -10,10 +10,10 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -57,18 +57,56 @@ public class TaskServiceTest {
     }
 
     @Test
+    public void get_task() {
+        // arrange
+
+        when(fakeRepo.findById(5))
+                .thenReturn(Optional.of(new Task(
+                        5,
+                        "task",
+                        false,
+                        TaskPriority.LOW)));
+
+        // act
+
+        var task = service.getTask(5);
+
+        // assert
+
+        assertThat(task.isPresent(), is(Boolean.TRUE));
+        assertThat(task.get().getId(), is(5));
+        assertThat(task.get().getDescription(), is("task"));
+        assertThat(task.get().isCompleted(), is(Boolean.FALSE));
+        assertThat(task.get().getPriority(), is(TaskPriority.LOW));
+    }
+
+    @Test
+    public void get_inexistent_task() {
+        // arrange
+
+        when(fakeRepo.findById(8)).thenReturn(Optional.empty());
+
+        // act
+
+        var task = service.getTask(8);
+
+        // assert
+
+        assertThat(task.isPresent(), is(Boolean.FALSE));
+    }
+
+    @Test
     public void create_task() {
         // arrange
 
         var taskToBeCreated = new Task("task0", false, TaskPriority.LOW);
 
-        when(fakeRepo.save(eq(taskToBeCreated)))
+        when(fakeRepo.save(taskToBeCreated))
                 .thenReturn(new Task(
                         3,
                         taskToBeCreated.getDescription(),
                         taskToBeCreated.isCompleted(),
-                        taskToBeCreated.getPriority()
-                ));
+                        taskToBeCreated.getPriority()));
 
         // act
 
@@ -82,7 +120,6 @@ public class TaskServiceTest {
         assertThat(createdTask.getPriority(), is(TaskPriority.LOW));
     }
 
-
     @Test
     public void delete_task() {
         // arrange
@@ -93,6 +130,6 @@ public class TaskServiceTest {
 
         // assert
 
-        verify(fakeRepo, times(1)).deleteById(eq(3));
+        verify(fakeRepo, times(1)).deleteById(3);
     }
 }

@@ -1,10 +1,9 @@
 package com.example.demo.controller;
 
+import com.example.demo.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import com.example.demo.service.TaskService;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,6 +23,17 @@ public class TaskController {
                         .stream()
                         .map(TaskAssembler::convert)
                         .collect(Collectors.toList()));
+    }
+
+    @GetMapping("/tasks/{id}")
+    public ResponseEntity<TaskDto> listTasks(@PathVariable("id") int id) {
+        var task = taskService.getTask(id);
+
+        if (task.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(TaskAssembler.convert(task.get()));
     }
 
     @PostMapping("/tasks")

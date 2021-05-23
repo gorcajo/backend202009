@@ -14,8 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static io.restassured.RestAssured.given;
-import static java.net.HttpURLConnection.HTTP_NO_CONTENT;
-import static java.net.HttpURLConnection.HTTP_OK;
+import static java.net.HttpURLConnection.*;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -57,6 +56,32 @@ class TaskControllerIntegrationTest {
                 .statusCode(HTTP_OK)
                 .extract()
                 .as(TaskDto[].class);
+    }
+
+    @Test
+    void get_task() {
+        given()
+                .baseUri("http://localhost:" + port)
+                .contentType(ContentType.JSON)
+                .when()
+                .get("/v1/tasks/" + initialTasks.get(0).getId())
+                .then()
+                .assertThat()
+                .statusCode(HTTP_OK)
+                .extract()
+                .as(TaskDto.class);
+    }
+
+    @Test
+    void get_inexistent_task() {
+        given()
+                .baseUri("http://localhost:" + port)
+                .contentType(ContentType.JSON)
+                .when()
+                .get("/v1/tasks/-1")
+                .then()
+                .assertThat()
+                .statusCode(HTTP_NOT_FOUND);
     }
 
     @AfterEach
