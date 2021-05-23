@@ -1,20 +1,29 @@
 package com.example.demo.entity;
 
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 
 @Entity
 public class Task {
 
     @Id
-    private int id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
 
     private String description;
-    private boolean completed;
+    private Boolean completed;
     private TaskPriority priority;
 
     public Task() {
 
+    }
+
+    public Task(String description, boolean completed, TaskPriority priority) {
+        this.description = description;
+        this.completed = completed;
+        this.priority = priority;
     }
 
     public Task(int id, String description, boolean completed, TaskPriority priority) {
@@ -24,7 +33,7 @@ public class Task {
         this.priority = priority;
     }
 
-    public int getId() {
+    public Integer getId() {
         return id;
     }
 

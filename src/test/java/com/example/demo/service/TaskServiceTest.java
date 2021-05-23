@@ -1,6 +1,5 @@
 package com.example.demo.service;
 
-import com.example.demo.controller.TaskDto;
 import com.example.demo.entity.Task;
 import com.example.demo.entity.TaskPriority;
 import com.example.demo.repository.TaskRepository;
@@ -14,6 +13,7 @@ import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -54,5 +54,31 @@ public class TaskServiceTest {
         assertThat(tasks.get(2).getDescription(), is("task2"));
         assertThat(tasks.get(2).isCompleted(), is(Boolean.FALSE));
         assertThat(tasks.get(2).getPriority(), is(TaskPriority.LOW));
+    }
+
+    @Test
+    public void create_task() {
+        // arrange
+
+        var taskToBeCreated = new Task("task0", false, TaskPriority.LOW);
+
+        when(fakeRepo.save(eq(taskToBeCreated)))
+                .thenReturn(new Task(
+                        3,
+                        taskToBeCreated.getDescription(),
+                        taskToBeCreated.isCompleted(),
+                        taskToBeCreated.getPriority()
+                ));
+
+        // act
+
+        var createdTask = service.createTask(taskToBeCreated);
+
+        // assert
+
+        assertThat(createdTask.getId(), is(3));
+        assertThat(createdTask.getDescription(), is("task0"));
+        assertThat(createdTask.isCompleted(), is(Boolean.FALSE));
+        assertThat(createdTask.getPriority(), is(TaskPriority.LOW));
     }
 }
