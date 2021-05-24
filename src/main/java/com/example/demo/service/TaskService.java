@@ -11,10 +11,12 @@ import java.util.List;
 @Service
 public class TaskService {
 
+    private final TimeService timeService;
     private final TaskRepository taskRepository;
 
-    public TaskService(@Autowired TaskRepository taskRepository) {
+    public TaskService(@Autowired TaskRepository taskRepository, @Autowired TimeService timeService) {
         this.taskRepository = taskRepository;
+        this.timeService = timeService;
     }
 
     public List<Task> listTasks() {
@@ -25,8 +27,9 @@ public class TaskService {
         return taskRepository.findById(id).orElseThrow(NotFoundException::new);
     }
 
-    public Task createTask(Task taskToBeCreated) {
-        return taskRepository.save(taskToBeCreated);
+    public Task createTask(Task task) {
+        task.setCreatedOn(timeService.getCurrentOffsetDateTime());
+        return taskRepository.save(task);
     }
 
     public void modifyTask(int id, Task task) {

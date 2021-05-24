@@ -4,6 +4,7 @@ import com.example.demo.entity.Task;
 import com.example.demo.entity.TaskPriority;
 import com.example.demo.exception.NotFoundException;
 import com.example.demo.repository.TaskRepository;
+import org.assertj.core.data.Offset;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -12,6 +13,8 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,6 +28,9 @@ public class TaskServiceTest {
     @Mock
     private TaskRepository fakeRepo;
 
+    @Mock
+    private TimeService fakeTimeService;
+
     @Captor
     ArgumentCaptor<Task> taskCaptor;
 
@@ -32,7 +38,62 @@ public class TaskServiceTest {
 
     @Before
     public void setup() {
-        service = new TaskService(fakeRepo);
+        service = new TaskService(fakeRepo, fakeTimeService);
+    }
+
+    @Test
+    public void create_task() {
+        // arrange
+
+        var taskToBeCreated = new Task("description", false, TaskPriority.LOW, null);
+
+        var offsetDateTime = OffsetDateTime.of(
+                2021,
+                5,
+                24,
+                20,
+                16,
+                56,
+                0,
+                ZoneOffset.UTC);
+
+        when(fakeRepo.save(taskToBeCreated))
+                .thenReturn(new Task(
+                        3,
+                        taskToBeCreated.getDescription(),
+                        taskToBeCreated.isCompleted(),
+                        taskToBeCreated.getPriority(),
+                        offsetDateTime));
+
+        when(fakeTimeService.getCurrentOffsetDateTime()).thenReturn(offsetDateTime);
+
+        // act
+
+        var createdTask = service.createTask(taskToBeCreated);
+
+        // assert
+
+        assertThat(createdTask.getId(), is(3));
+        assertThat(createdTask.getDescription(), is("description"));
+        assertThat(createdTask.isCompleted(), is(Boolean.FALSE));
+        assertThat(createdTask.getPriority(), is(TaskPriority.LOW));
+        assertThat(createdTask.getCreatedOn().getYear(), is(2021));
+        assertThat(createdTask.getCreatedOn().getMonthValue(), is(5));
+        assertThat(createdTask.getCreatedOn().getDayOfMonth(), is(24));
+        assertThat(createdTask.getCreatedOn().getHour(), is(20));
+        assertThat(createdTask.getCreatedOn().getMinute(), is(16));
+        assertThat(createdTask.getCreatedOn().getSecond(), is(56));
+        assertThat(createdTask.getCreatedOn().getOffset(), is(ZoneOffset.UTC));
+
+        verify(fakeRepo, times(1)).save(taskCaptor.capture());
+        assertThat(taskCaptor.getValue().getCreatedOn().getYear(), is(2021));
+        assertThat(taskCaptor.getValue().getCreatedOn().getMonthValue(), is(5));
+        assertThat(taskCaptor.getValue().getCreatedOn().getDayOfMonth(), is(24));
+        assertThat(taskCaptor.getValue().getCreatedOn().getHour(), is(20));
+        assertThat(taskCaptor.getValue().getCreatedOn().getMinute(), is(16));
+        assertThat(taskCaptor.getValue().getCreatedOn().getSecond(), is(56));
+        assertThat(taskCaptor.getValue().getCreatedOn().getOffset(), is(ZoneOffset.UTC));
+
     }
 
     @Test
@@ -40,9 +101,9 @@ public class TaskServiceTest {
         // arrange
 
         when(fakeRepo.findAll()).thenReturn(List.of(
-                new Task(0, "description-0", true, TaskPriority.HIGH),
-                new Task(1, "description-1", false, TaskPriority.LOW),
-                new Task(2, "description-2", false, TaskPriority.LOW)
+                new Task(0, "description-0", true, TaskPriority.HIGH, OffsetDateTime.now()),
+                new Task(1, "description-1", false, TaskPriority.LOW, OffsetDateTime.now()),
+                new Task(2, "description-2", false, TaskPriority.LOW, OffsetDateTime.now())
         ));
 
         // act
@@ -71,7 +132,8 @@ public class TaskServiceTest {
                         5,
                         "description",
                         false,
-                        TaskPriority.LOW)));
+                        TaskPriority.LOW,
+                        OffsetDateTime.now())));
 
         // act
 
@@ -99,31 +161,6 @@ public class TaskServiceTest {
     }
 
     @Test
-    public void create_task() {
-        // arrange
-
-        var taskToBeCreated = new Task("description-0", false, TaskPriority.LOW);
-
-        when(fakeRepo.save(taskToBeCreated))
-                .thenReturn(new Task(
-                        3,
-                        taskToBeCreated.getDescription(),
-                        taskToBeCreated.isCompleted(),
-                        taskToBeCreated.getPriority()));
-
-        // act
-
-        var createdTask = service.createTask(taskToBeCreated);
-
-        // assert
-
-        assertThat(createdTask.getId(), is(3));
-        assertThat(createdTask.getDescription(), is("description-0"));
-        assertThat(createdTask.isCompleted(), is(Boolean.FALSE));
-        assertThat(createdTask.getPriority(), is(TaskPriority.LOW));
-    }
-
-    @Test
     public void modify_task() {
         // arrange
 
@@ -132,11 +169,14 @@ public class TaskServiceTest {
                         4,
                         "original-description",
                         true,
-                        TaskPriority.MEDIUM)));
+                        TaskPriority.MEDIUM,
+                        OffsetDateTime.now())));
 
         // act
 
-        service.modifyTask(4, new Task("new-description", true, TaskPriority.MEDIUM));
+        service.modifyTask(
+                4,
+                new Task("new-description", true, TaskPriority.MEDIUM, OffsetDateTime.now()));
 
         // assert
 
@@ -153,7 +193,7 @@ public class TaskServiceTest {
 
         // act
 
-        service.modifyTask(4, new Task("new-description", true, TaskPriority.MEDIUM));
+        service.modifyTask(4, new Task("new-description", true, TaskPriority.MEDIUM, OffsetDateTime.now()));
 
         // assert
     }

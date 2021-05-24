@@ -4,6 +4,7 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import java.time.OffsetDateTime;
 
 @Entity
 public class Task {
@@ -15,22 +16,25 @@ public class Task {
     private String description;
     private Boolean completed;
     private TaskPriority priority;
+    private OffsetDateTime createdOn;
 
     public Task() {
 
     }
 
-    public Task(String description, boolean completed, TaskPriority priority) {
+    public Task(String description, boolean completed, TaskPriority priority, OffsetDateTime createdOn) {
         this.description = description;
         this.completed = completed;
         this.priority = priority;
+        this.createdOn = createdOn;
     }
 
-    public Task(int id, String description, boolean completed, TaskPriority priority) {
+    public Task(int id, String description, boolean completed, TaskPriority priority, OffsetDateTime createdOn) {
         this.id = id;
         this.description = description;
         this.completed = completed;
         this.priority = priority;
+        this.createdOn = createdOn;
     }
 
     public Integer getId() {
@@ -63,5 +67,13 @@ public class Task {
 
     public void setPriority(TaskPriority priority) {
         this.priority = priority;
+    }
+
+    public OffsetDateTime getCreatedOn() {
+        return createdOn;
+    }
+
+    public void setCreatedOn(OffsetDateTime createdOn) {
+        this.createdOn = createdOn;
     }
 }
