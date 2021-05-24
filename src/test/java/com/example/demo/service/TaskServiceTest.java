@@ -202,6 +202,8 @@ public class TaskServiceTest {
     public void delete_task() {
         // arrange
 
+        when(fakeRepo.findById(3)).thenReturn(Optional.of(new Task()));
+
         // act
 
         service.deleteTask(3);
@@ -211,9 +213,11 @@ public class TaskServiceTest {
         verify(fakeRepo, times(1)).deleteById(3);
     }
 
-    @Test(expected = NotFoundException.class)
+    @Test
     public void delete_inexistent_task() {
         // arrange
+
+        when(fakeRepo.findById(3)).thenReturn(Optional.empty());
 
         // act
 
@@ -221,6 +225,6 @@ public class TaskServiceTest {
 
         // assert
 
-        verify(fakeRepo, times(1)).deleteById(3);
+        verify(fakeRepo, times(0)).deleteById(anyInt());
     }
 }
