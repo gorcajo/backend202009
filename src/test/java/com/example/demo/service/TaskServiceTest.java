@@ -4,7 +4,6 @@ import com.example.demo.entity.Task;
 import com.example.demo.entity.TaskPriority;
 import com.example.demo.exception.NotFoundException;
 import com.example.demo.repository.TaskRepository;
-import org.assertj.core.data.Offset;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -12,11 +11,14 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -97,21 +99,22 @@ public class TaskServiceTest {
     }
 
     @Test
-    public void list_tasks() {
+    public void list_all_tasks() {
         // arrange
 
-        when(fakeRepo.findAll()).thenReturn(List.of(
+        when(fakeRepo.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(
                 new Task(0, "description-0", true, TaskPriority.HIGH, OffsetDateTime.now()),
                 new Task(1, "description-1", false, TaskPriority.LOW, OffsetDateTime.now()),
                 new Task(2, "description-2", false, TaskPriority.LOW, OffsetDateTime.now())
-        ));
+        )));
 
         // act
 
-        var tasks = service.listTasks();
+        var tasksPage = service.listTasks(Pageable.unpaged(), null, null);
 
         // assert
 
+        var tasks = tasksPage.stream().collect(Collectors.toList());
         assertThat(tasks.size(), is(3));
         assertThat(tasks.get(0).getId(), is(0));
         assertThat(tasks.get(0).getDescription(), is("description-0"));
@@ -124,57 +127,84 @@ public class TaskServiceTest {
     }
 
     @Test
-    public void list_tasks_order_by_priority() {
+    public void list_all_tasks_with_completed_filter() {
         // arrange
 
-        when(fakeRepo.findAllByOrderByPriorityAsc()).thenReturn(List.of(
+        when(fakeRepo.findAllByCompleted(eq(false), any(Pageable.class))).thenReturn(new PageImpl<>(List.of(
                 new Task(1, "description-1", false, TaskPriority.LOW, OffsetDateTime.now()),
-                new Task(2, "description-2", false, TaskPriority.MEDIUM, OffsetDateTime.now()),
-                new Task(0, "description-0", true, TaskPriority.HIGH, OffsetDateTime.now())
-        ));
+                new Task(2, "description-2", false, TaskPriority.LOW, OffsetDateTime.now())
+        )));
 
         // act
 
-        var tasks = service.listTasks("priority");
+        var tasksPage = service.listTasks(Pageable.unpaged(), false, null);
 
         // assert
 
-        assertThat(tasks.size(), is(3));
+        var tasks = tasksPage.stream().collect(Collectors.toList());
+        assertThat(tasks.size(), is(2));
         assertThat(tasks.get(0).getId(), is(1));
         assertThat(tasks.get(0).getDescription(), is("description-1"));
         assertThat(tasks.get(0).isCompleted(), is(Boolean.FALSE));
         assertThat(tasks.get(0).getPriority(), is(TaskPriority.LOW));
-        assertThat(tasks.get(2).getId(), is(0));
-        assertThat(tasks.get(2).getDescription(), is("description-0"));
-        assertThat(tasks.get(2).isCompleted(), is(Boolean.TRUE));
-        assertThat(tasks.get(2).getPriority(), is(TaskPriority.HIGH));
+        assertThat(tasks.get(1).getId(), is(2));
+        assertThat(tasks.get(1).getDescription(), is("description-2"));
+        assertThat(tasks.get(1).isCompleted(), is(Boolean.FALSE));
+        assertThat(tasks.get(1).getPriority(), is(TaskPriority.LOW));
     }
 
     @Test
-    public void list_tasks_order_by_created_on() {
+    public void list_all_tasks_with_priority_filter() {
         // arrange
 
-        when(fakeRepo.findAllByOrderByCreatedOnAsc()).thenReturn(List.of(
-                new Task(2, "description-2", false, TaskPriority.MEDIUM, OffsetDateTime.now()),
-                new Task(0, "description-0", true, TaskPriority.HIGH, OffsetDateTime.now()),
-                new Task(1, "description-1", false, TaskPriority.LOW, OffsetDateTime.now())
-        ));
+        when(fakeRepo.findAllByPriority(eq(TaskPriority.LOW), any(Pageable.class))).thenReturn(new PageImpl<>(List.of(
+                new Task(1, "description-1", false, TaskPriority.LOW, OffsetDateTime.now()),
+                new Task(2, "description-2", true, TaskPriority.LOW, OffsetDateTime.now())
+        )));
 
         // act
 
-        var tasks = service.listTasks("createdOn");
+        var tasksPage = service.listTasks(Pageable.unpaged(), null, TaskPriority.LOW);
 
         // assert
 
-        assertThat(tasks.size(), is(3));
-        assertThat(tasks.get(0).getId(), is(2));
-        assertThat(tasks.get(0).getDescription(), is("description-2"));
+        var tasks = tasksPage.stream().collect(Collectors.toList());
+        assertThat(tasks.size(), is(2));
+        assertThat(tasks.get(0).getId(), is(1));
+        assertThat(tasks.get(0).getDescription(), is("description-1"));
         assertThat(tasks.get(0).isCompleted(), is(Boolean.FALSE));
-        assertThat(tasks.get(0).getPriority(), is(TaskPriority.MEDIUM));
-        assertThat(tasks.get(2).getId(), is(1));
-        assertThat(tasks.get(2).getDescription(), is("description-1"));
-        assertThat(tasks.get(2).isCompleted(), is(Boolean.FALSE));
-        assertThat(tasks.get(2).getPriority(), is(TaskPriority.LOW));
+        assertThat(tasks.get(0).getPriority(), is(TaskPriority.LOW));
+        assertThat(tasks.get(1).getId(), is(2));
+        assertThat(tasks.get(1).getDescription(), is("description-2"));
+        assertThat(tasks.get(1).isCompleted(), is(Boolean.TRUE));
+        assertThat(tasks.get(1).getPriority(), is(TaskPriority.LOW));
+    }
+
+    @Test
+    public void list_all_tasks_with_priority_and_completed_filters() {
+        // arrange
+
+        when(fakeRepo.findAllByCompletedAndPriority(eq(Boolean.FALSE), eq(TaskPriority.LOW), any(Pageable.class))).thenReturn(new PageImpl<>(List.of(
+                new Task(1, "description-1", false, TaskPriority.LOW, OffsetDateTime.now()),
+                new Task(2, "description-2", false, TaskPriority.LOW, OffsetDateTime.now())
+        )));
+
+        // act
+
+        var tasksPage = service.listTasks(Pageable.unpaged(), false, TaskPriority.LOW);
+
+        // assert
+
+        var tasks = tasksPage.stream().collect(Collectors.toList());
+        assertThat(tasks.size(), is(2));
+        assertThat(tasks.get(0).getId(), is(1));
+        assertThat(tasks.get(0).getDescription(), is("description-1"));
+        assertThat(tasks.get(0).isCompleted(), is(Boolean.FALSE));
+        assertThat(tasks.get(0).getPriority(), is(TaskPriority.LOW));
+        assertThat(tasks.get(1).getId(), is(2));
+        assertThat(tasks.get(1).getDescription(), is("description-2"));
+        assertThat(tasks.get(1).isCompleted(), is(Boolean.FALSE));
+        assertThat(tasks.get(1).getPriority(), is(TaskPriority.LOW));
     }
 
     @Test

@@ -10,9 +10,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -39,7 +36,7 @@ class TaskControllerIntegrationTest {
                         TaskPriority.MEDIUM),
                 new TaskDto(
                         "task1",
-                        false,
+                        true,
                         TaskPriority.LOW),
                 new TaskDto(
                         "task2",
@@ -77,48 +74,72 @@ class TaskControllerIntegrationTest {
     }
 
     @Test
-    void list_tasks_order_by_created_on() {
-        given()
-                .baseUri("http://localhost:" + port)
-                .when()
-                .get("/v1/tasks?orderBy=createdOn")
-                .then()
-                .assertThat()
-                .statusCode(HTTP_OK)
-                .extract()
-                .as(TaskDto[].class);
-    }
-
-    @Test
-    void list_tasks_order_by_priority() {
+    void list_tasks_filtered_by_completed() {
         var tasks = given()
                 .baseUri("http://localhost:" + port)
                 .when()
-                .get("/v1/tasks?orderBy=priority")
+                .get("/v1/tasks?completed=true")
                 .then()
                 .assertThat()
                 .statusCode(HTTP_OK)
                 .extract()
                 .as(TaskDto[].class);
 
+        assertThat(tasks.length, is(1));
+        assertThat(tasks[0].isCompleted(), is(Boolean.TRUE));
+    }
+
+    @Test
+    void list_tasks_filtered_by_priority() {
+        var tasks = given()
+                .baseUri("http://localhost:" + port)
+                .when()
+                .get("/v1/tasks?priority=MEDIUM")
+                .then()
+                .assertThat()
+                .statusCode(HTTP_OK)
+                .extract()
+                .as(TaskDto[].class);
+
+        assertThat(tasks.length, is(1));
+        assertThat(tasks[0].getPriority(), is(TaskPriority.MEDIUM));
+    }
+
+    @Test
+    void list_tasks_sort_by_priority() {
+        var tasks = given()
+                .baseUri("http://localhost:" + port)
+                .when()
+                .get("/v1/tasks?sort=priority")
+                .then()
+                .assertThat()
+                .statusCode(HTTP_OK)
+                .extract()
+                .as(TaskDto[].class);
+
+        assertThat(tasks.length, is(3));
         assertThat(tasks[0].getPriority(), is(TaskPriority.LOW));
         assertThat(tasks[1].getPriority(), is(TaskPriority.MEDIUM));
         assertThat(tasks[2].getPriority(), is(TaskPriority.HIGH));
     }
 
     @Test
-    void list_tasks_order_by_wrong_field() {
-        var message = given()
+    void list_tasks_sort_by_priority_and_filtered_by_completed() {
+        var tasks = given()
                 .baseUri("http://localhost:" + port)
                 .when()
-                .get("/v1/tasks?orderBy=wrong")
+                .get("/v1/tasks?sort=priority&completed=false")
                 .then()
                 .assertThat()
-                .statusCode(HTTP_BAD_REQUEST)
+                .statusCode(HTTP_OK)
                 .extract()
-                .asString();
+                .as(TaskDto[].class);
 
-        assertThat(message, is("wrong criteria"));
+        assertThat(tasks.length, is(2));
+        assertThat(tasks[0].isCompleted(), is(Boolean.FALSE));
+        assertThat(tasks[0].getPriority(), is(TaskPriority.MEDIUM));
+        assertThat(tasks[1].isCompleted(), is(Boolean.FALSE));
+        assertThat(tasks[1].getPriority(), is(TaskPriority.HIGH));
     }
 
     @Test

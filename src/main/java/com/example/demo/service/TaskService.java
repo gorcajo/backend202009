@@ -1,13 +1,14 @@
 package com.example.demo.service;
 
 import com.example.demo.entity.Task;
-import com.example.demo.exception.IllegalArgumentsException;
+import com.example.demo.entity.TaskPriority;
 import com.example.demo.exception.NotFoundException;
 import com.example.demo.repository.TaskRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Objects;
 
 @Service
@@ -21,20 +22,16 @@ public class TaskService {
         this.timeService = timeService;
     }
 
-    public List<Task> listTasks() {
-        return listTasks(null);
-    }
-
-    public List<Task> listTasks(String sortBy) {
-        if (Objects.isNull(sortBy)) {
-            return taskRepository.findAll();
-        } else if (sortBy.equals("createdOn")) {
-            return taskRepository.findAllByOrderByCreatedOnAsc();
-        } else if (sortBy.equals("priority")) {
-            return taskRepository.findAllByOrderByPriorityAsc();
+    public Page<Task> listTasks(Pageable pageable, Boolean completed, TaskPriority priority) {
+        if (!Objects.isNull(completed) && !Objects.isNull(priority)) {
+            return taskRepository.findAllByCompletedAndPriority(completed, priority, pageable);
+        } else if (!Objects.isNull(completed)) {
+            return taskRepository.findAllByCompleted(completed, pageable);
+        } else if (!Objects.isNull(priority)) {
+            return taskRepository.findAllByPriority(priority, pageable);
+        } else {
+            return taskRepository.findAll(pageable);
         }
-
-        throw new IllegalArgumentsException("wrong criteria");
     }
 
     public Task getTask(int id) {

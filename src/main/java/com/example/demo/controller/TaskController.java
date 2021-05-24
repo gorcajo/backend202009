@@ -1,7 +1,9 @@
 package com.example.demo.controller;
 
+import com.example.demo.entity.TaskPriority;
 import com.example.demo.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,10 +18,13 @@ public class TaskController {
     private TaskService taskService;
 
     @GetMapping("/tasks")
-    public ResponseEntity<List<TaskDto>> listTasks(@RequestParam(value = "orderBy", required = false) String sortBy) {
+    public ResponseEntity<List<TaskDto>> listTasks(
+            @RequestParam(value = "completed", required = false) Boolean completed,
+            @RequestParam(value = "priority", required = false) TaskPriority priority,
+            Pageable pageable) {
         return ResponseEntity.ok(
                 taskService
-                        .listTasks(sortBy)
+                        .listTasks(pageable, completed, priority)
                         .stream()
                         .map(TaskAssembler::convert)
                         .collect(Collectors.toList()));

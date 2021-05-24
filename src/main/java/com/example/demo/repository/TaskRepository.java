@@ -1,14 +1,17 @@
 package com.example.demo.repository;
 
 import com.example.demo.entity.Task;
-import org.springframework.data.jpa.repository.JpaRepository;
+import com.example.demo.entity.TaskPriority;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-
 @Repository
-public interface TaskRepository extends JpaRepository<Task, Integer> {
+public interface TaskRepository extends PagingAndSortingRepository<Task, Integer> {
 
-    List<Task> findAllByOrderByCreatedOnAsc();
-    List<Task> findAllByOrderByPriorityAsc();
+    Page<Task> findAllByPriority(TaskPriority priority, Pageable pageable);
+
+    Page<Task> findAllByCompleted(boolean completed, Pageable pageable);
+    Page<Task> findAllByCompletedAndPriority(boolean completed, TaskPriority priority, Pageable pageable);
 }
