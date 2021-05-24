@@ -1,6 +1,5 @@
 package com.example.demo.controller;
 
-import com.example.demo.exception.NotFoundException;
 import com.example.demo.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -28,11 +27,7 @@ public class TaskController {
 
     @GetMapping("/tasks/{id}")
     public ResponseEntity<TaskDto> listTasks(@PathVariable("id") int id) {
-        try {
-            return ResponseEntity.ok(TaskAssembler.convert(taskService.getTask(id)));
-        } catch (NotFoundException nfe) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(TaskAssembler.convert(taskService.getTask(id)));
     }
 
     @PostMapping("/tasks")
@@ -42,21 +37,13 @@ public class TaskController {
 
     @PutMapping("/tasks/{id}")
     public ResponseEntity<Void> modifyTask(@PathVariable("id") int id, @RequestBody TaskDto task) {
-        try {
-            taskService.modifyTask(id, TaskAssembler.convert(task));
-            return ResponseEntity.noContent().build();
-        } catch (NotFoundException nfe) {
-            return ResponseEntity.notFound().build();
-        }
+        taskService.modifyTask(id, TaskAssembler.convert(task));
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/tasks/{id}")
     public ResponseEntity<Void> deleteTask(@PathVariable("id") int id) {
-        try {
-            taskService.deleteTask(id);
-            return ResponseEntity.noContent().build();
-        } catch (NotFoundException nfe) {
-            return ResponseEntity.notFound().build();
-        }
+        taskService.deleteTask(id);
+        return ResponseEntity.noContent().build();
     }
 }
