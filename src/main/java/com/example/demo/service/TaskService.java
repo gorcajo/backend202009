@@ -1,12 +1,14 @@
 package com.example.demo.service;
 
 import com.example.demo.entity.Task;
+import com.example.demo.exception.IllegalArgumentsException;
 import com.example.demo.exception.NotFoundException;
 import com.example.demo.repository.TaskRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class TaskService {
@@ -20,7 +22,19 @@ public class TaskService {
     }
 
     public List<Task> listTasks() {
-        return taskRepository.findAll();
+        return listTasks(null);
+    }
+
+    public List<Task> listTasks(String sortBy) {
+        if (Objects.isNull(sortBy)) {
+            return taskRepository.findAll();
+        } else if (sortBy.equals("createdOn")) {
+            return taskRepository.findAllByOrderByCreatedOnAsc();
+        } else if (sortBy.equals("priority")) {
+            return taskRepository.findAllByOrderByPriorityAsc();
+        }
+
+        throw new IllegalArgumentsException("wrong criteria");
     }
 
     public Task getTask(int id) {

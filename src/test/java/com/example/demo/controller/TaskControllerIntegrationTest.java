@@ -10,11 +10,16 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static io.restassured.RestAssured.given;
 import static java.net.HttpURLConnection.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -27,28 +32,41 @@ class TaskControllerIntegrationTest {
 
     @BeforeEach
     public void setup() {
-        initialTasks = new ArrayList<>();
+        var tasksToBeCreated = List.of(
+                new TaskDto(
+                        "task0",
+                        false,
+                        TaskPriority.MEDIUM),
+                new TaskDto(
+                        "task1",
+                        false,
+                        TaskPriority.LOW),
+                new TaskDto(
+                        "task2",
+                        false,
+                        TaskPriority.HIGH)
+        );
 
-        for (int i = 0; i < 2; i++) {
-            initialTasks.add(given()
-                    .baseUri("http://localhost:" + port)
-                    .contentType(ContentType.JSON)
-                    .body(new TaskDto("task" + i, false, TaskPriority.LOW))
-                    .when()
-                    .post("/v1/tasks")
-                    .then()
-                    .assertThat()
-                    .statusCode(HTTP_OK)
-                    .extract()
-                    .as(TaskDto.class));
-        }
+        initialTasks = tasksToBeCreated
+                .stream()
+                .map(task -> given()
+                        .baseUri("http://localhost:" + port)
+                        .contentType(ContentType.JSON)
+                        .body(task)
+                        .when()
+                        .post("/v1/tasks")
+                        .then()
+                        .assertThat()
+                        .statusCode(HTTP_OK)
+                        .extract()
+                        .as(TaskDto.class))
+                .collect(Collectors.toList());
     }
 
     @Test
     void list_tasks() {
         given()
                 .baseUri("http://localhost:" + port)
-                .contentType(ContentType.JSON)
                 .when()
                 .get("/v1/tasks")
                 .then()
@@ -59,10 +77,54 @@ class TaskControllerIntegrationTest {
     }
 
     @Test
+    void list_tasks_order_by_created_on() {
+        given()
+                .baseUri("http://localhost:" + port)
+                .when()
+                .get("/v1/tasks?orderBy=createdOn")
+                .then()
+                .assertThat()
+                .statusCode(HTTP_OK)
+                .extract()
+                .as(TaskDto[].class);
+    }
+
+    @Test
+    void list_tasks_order_by_priority() {
+        var tasks = given()
+                .baseUri("http://localhost:" + port)
+                .when()
+                .get("/v1/tasks?orderBy=priority")
+                .then()
+                .assertThat()
+                .statusCode(HTTP_OK)
+                .extract()
+                .as(TaskDto[].class);
+
+        assertThat(tasks[0].getPriority(), is(TaskPriority.LOW));
+        assertThat(tasks[1].getPriority(), is(TaskPriority.MEDIUM));
+        assertThat(tasks[2].getPriority(), is(TaskPriority.HIGH));
+    }
+
+    @Test
+    void list_tasks_order_by_wrong_field() {
+        var message = given()
+                .baseUri("http://localhost:" + port)
+                .when()
+                .get("/v1/tasks?orderBy=wrong")
+                .then()
+                .assertThat()
+                .statusCode(HTTP_BAD_REQUEST)
+                .extract()
+                .asString();
+
+        assertThat(message, is("wrong criteria"));
+    }
+
+    @Test
     void get_task() {
         given()
                 .baseUri("http://localhost:" + port)
-                .contentType(ContentType.JSON)
                 .when()
                 .get("/v1/tasks/" + initialTasks.get(0).getId())
                 .then()
@@ -76,7 +138,6 @@ class TaskControllerIntegrationTest {
     void get_inexistent_task() {
         given()
                 .baseUri("http://localhost:" + port)
-                .contentType(ContentType.JSON)
                 .when()
                 .get("/v1/tasks/-1")
                 .then()
@@ -114,7 +175,6 @@ class TaskControllerIntegrationTest {
     void delete_inexistent_task() {
         given()
                 .baseUri("http://localhost:" + port)
-                .contentType(ContentType.JSON)
                 .when()
                 .delete("/v1/tasks/-1")
                 .then()
@@ -127,8 +187,6 @@ class TaskControllerIntegrationTest {
         for (TaskDto task : initialTasks) {
             given()
                     .baseUri("http://localhost:" + port)
-                    .contentType(ContentType.JSON)
-                    .body(new TaskDto("task0", false, TaskPriority.LOW))
                     .when()
                     .delete("/v1/tasks/" + task.getId())
                     .then()

@@ -124,6 +124,60 @@ public class TaskServiceTest {
     }
 
     @Test
+    public void list_tasks_order_by_priority() {
+        // arrange
+
+        when(fakeRepo.findAllByOrderByPriorityAsc()).thenReturn(List.of(
+                new Task(1, "description-1", false, TaskPriority.LOW, OffsetDateTime.now()),
+                new Task(2, "description-2", false, TaskPriority.MEDIUM, OffsetDateTime.now()),
+                new Task(0, "description-0", true, TaskPriority.HIGH, OffsetDateTime.now())
+        ));
+
+        // act
+
+        var tasks = service.listTasks("priority");
+
+        // assert
+
+        assertThat(tasks.size(), is(3));
+        assertThat(tasks.get(0).getId(), is(1));
+        assertThat(tasks.get(0).getDescription(), is("description-1"));
+        assertThat(tasks.get(0).isCompleted(), is(Boolean.FALSE));
+        assertThat(tasks.get(0).getPriority(), is(TaskPriority.LOW));
+        assertThat(tasks.get(2).getId(), is(0));
+        assertThat(tasks.get(2).getDescription(), is("description-0"));
+        assertThat(tasks.get(2).isCompleted(), is(Boolean.TRUE));
+        assertThat(tasks.get(2).getPriority(), is(TaskPriority.HIGH));
+    }
+
+    @Test
+    public void list_tasks_order_by_created_on() {
+        // arrange
+
+        when(fakeRepo.findAllByOrderByCreatedOnAsc()).thenReturn(List.of(
+                new Task(2, "description-2", false, TaskPriority.MEDIUM, OffsetDateTime.now()),
+                new Task(0, "description-0", true, TaskPriority.HIGH, OffsetDateTime.now()),
+                new Task(1, "description-1", false, TaskPriority.LOW, OffsetDateTime.now())
+        ));
+
+        // act
+
+        var tasks = service.listTasks("createdOn");
+
+        // assert
+
+        assertThat(tasks.size(), is(3));
+        assertThat(tasks.get(0).getId(), is(2));
+        assertThat(tasks.get(0).getDescription(), is("description-2"));
+        assertThat(tasks.get(0).isCompleted(), is(Boolean.FALSE));
+        assertThat(tasks.get(0).getPriority(), is(TaskPriority.MEDIUM));
+        assertThat(tasks.get(2).getId(), is(1));
+        assertThat(tasks.get(2).getDescription(), is("description-1"));
+        assertThat(tasks.get(2).isCompleted(), is(Boolean.FALSE));
+        assertThat(tasks.get(2).getPriority(), is(TaskPriority.LOW));
+    }
+
+    @Test
     public void get_task() {
         // arrange
 

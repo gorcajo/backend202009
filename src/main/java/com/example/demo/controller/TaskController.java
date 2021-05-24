@@ -16,17 +16,17 @@ public class TaskController {
     private TaskService taskService;
 
     @GetMapping("/tasks")
-    public ResponseEntity<List<TaskDto>> listTasks() {
+    public ResponseEntity<List<TaskDto>> listTasks(@RequestParam(value = "orderBy", required = false) String sortBy) {
         return ResponseEntity.ok(
                 taskService
-                        .listTasks()
+                        .listTasks(sortBy)
                         .stream()
                         .map(TaskAssembler::convert)
                         .collect(Collectors.toList()));
     }
 
     @GetMapping("/tasks/{id}")
-    public ResponseEntity<TaskDto> listTasks(@PathVariable("id") int id) {
+    public ResponseEntity<TaskDto> getTask(@PathVariable("id") int id) {
         return ResponseEntity.ok(TaskAssembler.convert(taskService.getTask(id)));
     }
 
