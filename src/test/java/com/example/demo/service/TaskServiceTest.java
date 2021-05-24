@@ -170,4 +170,17 @@ public class TaskServiceTest {
 
         verify(fakeRepo, times(1)).deleteById(3);
     }
+
+    @Test(expected = NotFoundException.class)
+    public void delete_inexistent_task() {
+        // arrange
+
+        // act
+
+        service.deleteTask(3);
+
+        // assert
+
+        verify(fakeRepo, times(1)).deleteById(3);
+    }
 }

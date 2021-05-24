@@ -110,6 +110,18 @@ class TaskControllerIntegrationTest {
                 .statusCode(HTTP_NOT_FOUND);
     }
 
+    @Test
+    void delete_inexistent_task() {
+        given()
+                .baseUri("http://localhost:" + port)
+                .contentType(ContentType.JSON)
+                .when()
+                .delete("/v1/tasks/-1")
+                .then()
+                .assertThat()
+                .statusCode(HTTP_NO_CONTENT);
+    }
+
     @AfterEach
     public void cleanup() {
         for (TaskDto task : initialTasks) {
