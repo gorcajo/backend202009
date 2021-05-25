@@ -28,3 +28,10 @@ Develop the necessary functionalities for the application to be able to perform 
     - Filter results by priority and/or completion.
     
 2. Create a new entity called *SubtaskEntity* that allows one task to have multiple subtasks.
+
+## How to run with Docker Compose
+
+1. Compile: `mvn clean package -DskipTests`.
+2. Start the database: `docker-compose up -d database`.
+3. Wait for a while to give time to the database to start.
+4. Start the application: `docker-compose up -d application`.
