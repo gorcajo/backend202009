@@ -13,5 +13,6 @@ public interface TaskRepository extends PagingAndSortingRepository<Task, Integer
     Page<Task> findAllByPriority(TaskPriority priority, Pageable pageable);
 
     Page<Task> findAllByCompleted(boolean completed, Pageable pageable);
+
     Page<Task> findAllByCompletedAndPriority(boolean completed, TaskPriority priority, Pageable pageable);
 }

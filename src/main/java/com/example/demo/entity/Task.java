@@ -1,10 +1,9 @@
 package com.example.demo.entity;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import javax.persistence.*;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 public class Task {
@@ -18,8 +17,11 @@ public class Task {
     private TaskPriority priority;
     private OffsetDateTime createdOn;
 
-    public Task() {
+    @OneToMany(mappedBy = "parentTask", fetch = FetchType.EAGER)
+    private List<Subtask> subtasks;
 
+    public Task() {
+        this.subtasks = new ArrayList<>();
     }
 
     public Task(String description, boolean completed, TaskPriority priority, OffsetDateTime createdOn) {
@@ -27,6 +29,7 @@ public class Task {
         this.completed = completed;
         this.priority = priority;
         this.createdOn = createdOn;
+        this.subtasks = new ArrayList<>();
     }
 
     public Task(int id, String description, boolean completed, TaskPriority priority, OffsetDateTime createdOn) {
@@ -35,6 +38,7 @@ public class Task {
         this.completed = completed;
         this.priority = priority;
         this.createdOn = createdOn;
+        this.subtasks = new ArrayList<>();
     }
 
     public Integer getId() {
@@ -75,5 +79,13 @@ public class Task {
 
     public void setCreatedOn(OffsetDateTime createdOn) {
         this.createdOn = createdOn;
+    }
+
+    public List<Subtask> getSubtasks() {
+        return subtasks;
+    }
+
+    public void setSubtasks(List<Subtask> subtasks) {
+        this.subtasks = subtasks;
     }
 }

@@ -20,7 +20,7 @@ import static org.hamcrest.Matchers.is;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class TaskControllerIntegrationTest {
+class TaskControllerTest_Int {
 
     @LocalServerPort
     private int port;
@@ -190,6 +190,21 @@ class TaskControllerIntegrationTest {
                 .then()
                 .assertThat()
                 .statusCode(HTTP_NOT_FOUND);
+    }
+
+    @Test
+    void add_subtask() {
+       given()
+                .baseUri("http://localhost:" + port)
+                .contentType(ContentType.JSON)
+                .body(new SubtaskDto("sutask-description", false))
+                .when()
+                .post("/v1/tasks/" + initialTasks.get(0).getId() + "/subtasks")
+                .then()
+                .assertThat()
+                .statusCode(HTTP_OK)
+                .extract()
+                .as(TaskDto.class);
     }
 
     @Test

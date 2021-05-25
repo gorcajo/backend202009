@@ -26,23 +26,28 @@ public class TaskController {
                 taskService
                         .listTasks(pageable, completed, priority)
                         .stream()
-                        .map(TaskAssembler::convert)
+                        .map(TaskDto::from)
                         .collect(Collectors.toList()));
     }
 
     @GetMapping("/tasks/{id}")
     public ResponseEntity<TaskDto> getTask(@PathVariable("id") int id) {
-        return ResponseEntity.ok(TaskAssembler.convert(taskService.getTask(id)));
+        return ResponseEntity.ok(TaskDto.from(taskService.getTask(id)));
     }
 
     @PostMapping("/tasks")
     public ResponseEntity<TaskDto> createTask(@RequestBody TaskDto task) {
-        return ResponseEntity.ok(TaskAssembler.convert(taskService.createTask(TaskAssembler.convert(task))));
+        return ResponseEntity.ok(TaskDto.from(taskService.createTask(task.toEntity())));
+    }
+
+    @PostMapping("/tasks/{id}/subtasks")
+    public ResponseEntity<TaskDto> addSubtask(@PathVariable("id") int id, @RequestBody SubtaskDto subtask) {
+        return ResponseEntity.ok(TaskDto.from(taskService.addSubtask(id, subtask.toEntity())));
     }
 
     @PutMapping("/tasks/{id}")
     public ResponseEntity<Void> modifyTask(@PathVariable("id") int id, @RequestBody TaskDto task) {
-        taskService.modifyTask(id, TaskAssembler.convert(task));
+        taskService.modifyTask(id, task.toEntity());
         return ResponseEntity.noContent().build();
     }
 

@@ -1,8 +1,10 @@
 package com.example.demo.service;
 
+import com.example.demo.entity.Subtask;
 import com.example.demo.entity.Task;
 import com.example.demo.entity.TaskPriority;
 import com.example.demo.exception.NotFoundException;
+import com.example.demo.repository.SubtaskRepository;
 import com.example.demo.repository.TaskRepository;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,7 +30,10 @@ import static org.mockito.Mockito.*;
 public class TaskServiceTest {
 
     @Mock
-    private TaskRepository fakeRepo;
+    private TaskRepository fakeTaskRepo;
+
+    @Mock
+    private SubtaskRepository fakeSubtaskRepo;
 
     @Mock
     private TimeService fakeTimeService;
@@ -40,7 +45,7 @@ public class TaskServiceTest {
 
     @Before
     public void setup() {
-        service = new TaskService(fakeRepo, fakeTimeService);
+        service = new TaskService(fakeTaskRepo, fakeSubtaskRepo, fakeTimeService);
     }
 
     @Test
@@ -59,7 +64,7 @@ public class TaskServiceTest {
                 0,
                 ZoneOffset.UTC);
 
-        when(fakeRepo.save(taskToBeCreated))
+        when(fakeTaskRepo.save(taskToBeCreated))
                 .thenReturn(new Task(
                         3,
                         taskToBeCreated.getDescription(),
@@ -87,7 +92,7 @@ public class TaskServiceTest {
         assertThat(createdTask.getCreatedOn().getSecond(), is(56));
         assertThat(createdTask.getCreatedOn().getOffset(), is(ZoneOffset.UTC));
 
-        verify(fakeRepo, times(1)).save(taskCaptor.capture());
+        verify(fakeTaskRepo, times(1)).save(taskCaptor.capture());
         assertThat(taskCaptor.getValue().getCreatedOn().getYear(), is(2021));
         assertThat(taskCaptor.getValue().getCreatedOn().getMonthValue(), is(5));
         assertThat(taskCaptor.getValue().getCreatedOn().getDayOfMonth(), is(24));
@@ -102,7 +107,7 @@ public class TaskServiceTest {
     public void list_all_tasks() {
         // arrange
 
-        when(fakeRepo.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(
+        when(fakeTaskRepo.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(
                 new Task(0, "description-0", true, TaskPriority.HIGH, OffsetDateTime.now()),
                 new Task(1, "description-1", false, TaskPriority.LOW, OffsetDateTime.now()),
                 new Task(2, "description-2", false, TaskPriority.LOW, OffsetDateTime.now())
@@ -130,7 +135,7 @@ public class TaskServiceTest {
     public void list_all_tasks_with_completed_filter() {
         // arrange
 
-        when(fakeRepo.findAllByCompleted(eq(false), any(Pageable.class))).thenReturn(new PageImpl<>(List.of(
+        when(fakeTaskRepo.findAllByCompleted(eq(false), any(Pageable.class))).thenReturn(new PageImpl<>(List.of(
                 new Task(1, "description-1", false, TaskPriority.LOW, OffsetDateTime.now()),
                 new Task(2, "description-2", false, TaskPriority.LOW, OffsetDateTime.now())
         )));
@@ -157,7 +162,7 @@ public class TaskServiceTest {
     public void list_all_tasks_with_priority_filter() {
         // arrange
 
-        when(fakeRepo.findAllByPriority(eq(TaskPriority.LOW), any(Pageable.class))).thenReturn(new PageImpl<>(List.of(
+        when(fakeTaskRepo.findAllByPriority(eq(TaskPriority.LOW), any(Pageable.class))).thenReturn(new PageImpl<>(List.of(
                 new Task(1, "description-1", false, TaskPriority.LOW, OffsetDateTime.now()),
                 new Task(2, "description-2", true, TaskPriority.LOW, OffsetDateTime.now())
         )));
@@ -184,7 +189,7 @@ public class TaskServiceTest {
     public void list_all_tasks_with_priority_and_completed_filters() {
         // arrange
 
-        when(fakeRepo.findAllByCompletedAndPriority(eq(Boolean.FALSE), eq(TaskPriority.LOW), any(Pageable.class))).thenReturn(new PageImpl<>(List.of(
+        when(fakeTaskRepo.findAllByCompletedAndPriority(eq(Boolean.FALSE), eq(TaskPriority.LOW), any(Pageable.class))).thenReturn(new PageImpl<>(List.of(
                 new Task(1, "description-1", false, TaskPriority.LOW, OffsetDateTime.now()),
                 new Task(2, "description-2", false, TaskPriority.LOW, OffsetDateTime.now())
         )));
@@ -211,7 +216,7 @@ public class TaskServiceTest {
     public void get_task() {
         // arrange
 
-        when(fakeRepo.findById(5))
+        when(fakeTaskRepo.findById(5))
                 .thenReturn(Optional.of(new Task(
                         5,
                         "description",
@@ -235,7 +240,7 @@ public class TaskServiceTest {
     public void get_inexistent_task() {
         // arrange
 
-        when(fakeRepo.findById(8)).thenReturn(Optional.empty());
+        when(fakeTaskRepo.findById(8)).thenReturn(Optional.empty());
 
         // act
 
@@ -248,7 +253,7 @@ public class TaskServiceTest {
     public void modify_task() {
         // arrange
 
-        when(fakeRepo.findById(4))
+        when(fakeTaskRepo.findById(4))
                 .thenReturn(Optional.of(new Task(
                         4,
                         "original-description",
@@ -264,8 +269,8 @@ public class TaskServiceTest {
 
         // assert
 
-        verify(fakeRepo, times(1)).findById(4);
-        verify(fakeRepo, times(1)).save(taskCaptor.capture());
+        verify(fakeTaskRepo, times(1)).findById(4);
+        verify(fakeTaskRepo, times(1)).save(taskCaptor.capture());
         assertThat(taskCaptor.getValue().getDescription(), is("new-description"));
         assertThat(taskCaptor.getValue().isCompleted(), is(Boolean.TRUE));
         assertThat(taskCaptor.getValue().getPriority(), is(TaskPriority.MEDIUM));
@@ -283,10 +288,38 @@ public class TaskServiceTest {
     }
 
     @Test
+    public void add_subtask() {
+        // arrange
+
+        var originalTask = new Task(
+                6,
+                "description-6",
+                false,
+                TaskPriority.MEDIUM,
+                OffsetDateTime.now());
+
+        var subtask = new Subtask("description", false);
+
+        when(fakeTaskRepo.findById(6)).thenReturn(Optional.of(originalTask));
+
+        // act
+
+        var task = service.addSubtask(6, subtask);
+
+        // assert
+
+        verify(fakeSubtaskRepo, times(1)).save(subtask);
+        assertThat(task.getId(), is(originalTask.getId()));
+        assertThat(task.getSubtasks().size(), is(1));
+        assertThat(task.getSubtasks().get(0).getDescription(), is(subtask.getDescription()));
+        assertThat(task.getSubtasks().get(0).isCompleted(), is(subtask.isCompleted()));
+    }
+
+    @Test
     public void delete_task() {
         // arrange
 
-        when(fakeRepo.findById(3)).thenReturn(Optional.of(new Task()));
+        when(fakeTaskRepo.findById(3)).thenReturn(Optional.of(new Task()));
 
         // act
 
@@ -294,14 +327,14 @@ public class TaskServiceTest {
 
         // assert
 
-        verify(fakeRepo, times(1)).deleteById(3);
+        verify(fakeTaskRepo, times(1)).deleteById(3);
     }
 
     @Test
     public void delete_inexistent_task() {
         // arrange
 
-        when(fakeRepo.findById(3)).thenReturn(Optional.empty());
+        when(fakeTaskRepo.findById(3)).thenReturn(Optional.empty());
 
         // act
 
@@ -309,6 +342,6 @@ public class TaskServiceTest {
 
         // assert
 
-        verify(fakeRepo, times(0)).deleteById(anyInt());
+        verify(fakeTaskRepo, times(0)).deleteById(anyInt());
     }
 }
